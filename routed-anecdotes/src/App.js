@@ -47,9 +47,9 @@ const Footer = () => (
 )
 
 const CreateNew = (props) => {
-  const content = useField('text')
-  const author = useField('text')
-  const info = useField('text')
+  const { reset: contentReset, ...content } = useField('text')
+  const { reset: authorReset, ...author } = useField('text')
+  const { reset: infoReset, ...info } = useField('text')
   const history = useHistory()
 
   const handleSubmit = (e) => {
@@ -63,9 +63,9 @@ const CreateNew = (props) => {
       })
       history.push('/')
     } else if (e.nativeEvent.submitter.name === 'reset') {
-      content.reset()
-      author.reset()
-      info.reset()
+      contentReset()
+      authorReset()
+      infoReset()
     }
   }
 
@@ -97,7 +97,7 @@ const Anecdote = ({ anecdotes }) => {
   const anecdote = anecdotes.find(a => a.id === id)
   return (
     <div>
-      <h2>{anecdote.content}</h2>
+      <h2>{anecdote.content} by {anecdote.author}</h2>
       <p>has {anecdote.votes} votes</p>
       <p>for more info see <a href={anecdote.info}>{anecdote.info}</a></p>
     </div>
