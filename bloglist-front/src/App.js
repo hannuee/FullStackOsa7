@@ -6,15 +6,16 @@ import Togglable from './components/Togglable'
 import blogService from './services/blogs'
 import loginService from './services/login'
 import { changeNotification } from './reducers/notificationReducer'
+import { createBlog, initializeBlogs } from './reducers/blogsReducer'
 
 const App = () => {
-  const [blogs, setBlogs] = useState([])
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
 
   const dispatch = useDispatch()
   const message = useSelector(state => state.notification)
+  const blogs = useSelector(state => state.blogs)
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedUser')
@@ -24,9 +25,7 @@ const App = () => {
       blogService.setToken(user.token)
     }
 
-    blogService.getAll().then(blogs =>
-      setBlogs(blogs.sort((a, b) => b.likes - a.likes))
-    )
+    dispatch(initializeBlogs())
   }, [])
 
   const handleLogin = async (event) => {
@@ -47,55 +46,15 @@ const App = () => {
     }
   }
 
-  const blogFormRef = useRef()
+  const blogFormToggleRef = useRef()
+  const blogFormEmptyRef = useRef()
 
-  const handleCreation = async (blogObject) => {
-    try {
-      const response = await blogService.create(blogObject)
-      setBlogs(blogs.concat(response).sort((a, b) => b.likes - a.likes))
-
-      blogFormRef.current.toggleVisibility()
-
-      dispatch(changeNotification(`a new blog ${response.title} by ${response.author} added`, 'success', 5))
-      return true
-    } catch (exception) {
-      if (exception.response) {
-        dispatch(changeNotification(exception.response.data.error, 'error', 5))
-      }
-      return false
-    }
+  const handleCreation = (blogObject) => {
+    dispatch(createBlog(blogObject, blogFormToggleRef, blogFormEmptyRef))
   }
 
-  const handleUpdate = async (originalBlog, updatedBlog) => {
-    try {
-      const response = await blogService.update(originalBlog.id, updatedBlog)
-      response.user = originalBlog.user
-      setBlogs(blogs.filter(blog => blog.id !== response.id).concat(response).sort((a, b) => b.likes - a.likes))
-
-      dispatch(changeNotification(`blog ${response.title} by ${response.author} got 1 like more`, 'success', 5))
-      return true
-    } catch (exception) {
-      if (exception.response) {
-        dispatch(changeNotification(exception.response.data.error, 'error', 5))
-      }
-      return false
-    }
-  }
-
-  const handleDeletion = async (deletedBlog) => {
-    try {
-      await blogService.deletion(deletedBlog.id)
-      setBlogs(blogs.filter(blog => blog.id !== deletedBlog.id).sort((a, b) => b.likes - a.likes))
-
-      dispatch(changeNotification(`blog ${deletedBlog.title} by ${deletedBlog.author} deleted`, 'success', 5))
-      return true
-    } catch (exception) {
-      if (exception.response) {
-        dispatch(changeNotification(exception.response.data.error, 'error', 5))
-      }
-      return false
-    }
-  }
+  const handleUpdate = () => null
+  const handleDeletion = () => null
 
   const logout = () => {
     window.localStorage.removeItem('loggedUser')
@@ -137,9 +96,10 @@ const App = () => {
       {Notification(message)}
       <p>{user.name} logged in <button onClick={() => logout()}>Logout</button></p>
 
-      <Togglable buttonLabel="new blog" ref={blogFormRef}>
+      <Togglable buttonLabel="new blog" ref={blogFormToggleRef}>
         <NewBlogForm
           createBlog={handleCreation}
+          ref={blogFormEmptyRef}
         />
       </Togglable>
 

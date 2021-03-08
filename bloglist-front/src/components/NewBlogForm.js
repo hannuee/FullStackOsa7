@@ -1,20 +1,24 @@
-import React, { useState } from 'react'
-import PropTypes from 'prop-types'
+import React, { useState, useImperativeHandle } from 'react'
 
-const NewBlogForm = ({ createBlog }) => {
-
+const NewBlogForm = React.forwardRef((props, ref) => {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [url, setUrl] = useState('')
 
-  const handleCreation = async (event) => {
+  const handleCreation = (event) => {
     event.preventDefault()
-    if (await createBlog({ title, author, url })) {
-      setTitle('')
-      setAuthor('')
-      setUrl('')
-    }
+    props.createBlog({ title, author, url })
   }
+
+  const emptyForm = () => {
+    setTitle('')
+    setAuthor('')
+    setUrl('')
+  }
+
+  useImperativeHandle(ref, () => {
+    return { emptyForm }
+  })
 
   return (
     <div>
@@ -33,10 +37,8 @@ const NewBlogForm = ({ createBlog }) => {
       </form>
     </div>
   )
-}
+})
 
-NewBlogForm.propTypes = {
-  createBlog: PropTypes.func.isRequired
-}
+NewBlogForm.displayName = 'NewBlogForm'
 
 export default NewBlogForm
